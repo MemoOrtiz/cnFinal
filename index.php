@@ -16,35 +16,30 @@ if ($conexion === false) {
     die("Error de conexión: " . print_r(sqlsrv_errors(), true));
 }
 
-
-
+$ok = true;
+$error = "";
+if ($conexion === false) {
+    $ok = false;
+    // Recopilar mensajes de error de SQL Server
+    $errs = sqlsrv_errors();
+    ...
+}
 
 // --- 4. Manejar eliminación del último registro ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_last']) && $ok) {
-    $mysqli->query("DELETE FROM personas ORDER BY id DESC LIMIT 1");
-    // recarga para reflejar el cambio
-    header('Location: '.$_SERVER['REQUEST_URI']);
-    exit;
-}
+$tsql_delete = "DELETE TOP (1) FROM personas ORDER BY id DESC";
+$stmtDel = sqlsrv_query($conexion, $tsql_delete);
 
 // --- 5. Manejar inserción de nuevo registro ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nombre']) && $ok) {
-    $nombre = $mysqli->real_escape_string($_POST['nombre']);
-    $estado = $mysqli->real_escape_string($_POST['estado_civil']);
-    if ($nombre && $estado) {
-        $mysqli->query("
-          INSERT INTO personas (nombre, estado_civil)
-          VALUES ('$nombre', '$estado')
-        ");
-    }
-    // recarga para evitar reenvío de formulario
-    header('Location: '.$_SERVER['REQUEST_URI']);
-    exit;
-}
+$tsql_insert = "INSERT INTO personas (nombre, estado_civil) VALUES (?, ?)";
+$params = [ $nombre, $estado ];
+$stmtIns = sqlsrv_query($conexion, $tsql_insert, $params);
+
 
 // --- 6. Obtener registros si hay conexión ---
-if ($ok) {
-    $res = $mysqli->query("SELECT * FROM personas ORDER BY id ASC");
+$tsql_select = "SELECT id, nombre, estado_civil FROM personas ORDER BY id ASC";
+$stmtSel = sqlsrv_query($conexion, $tsql_select);
+while ($row = sqlsrv_fetch_array($stmtSel, SQLSRV_FETCH_ASSOC)) {
+    $registros[] = $row;
 }
 ?>
 <!DOCTYPE html>
