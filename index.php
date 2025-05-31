@@ -27,7 +27,13 @@ if ($conexion === false) {
 // 3) Manejar borrado / inserción antes de imprimir HTML
 //    Si se envió "delete_last", borramos el último registro y redirigimos para evitar reenvío del formulario.
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_last'])) {
-    $tsql_delete = "DELETE TOP (1) FROM personas ORDER BY id DESC";
+    $tsql_delete = " DELETE 
+FROM personas 
+WHERE id = (
+    SELECT TOP (1) id
+    FROM personas
+    ORDER BY id DESC
+)"; 
     $stmtDel = sqlsrv_query($conexion, $tsql_delete);
     // (Opcional) podrías capturar errores:
     // if ($stmtDel === false) { /* manejar error con sqlsrv_errors() */ }
